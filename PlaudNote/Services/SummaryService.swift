@@ -96,7 +96,7 @@ class SummaryService: ObservableObject {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
         let body: [String: Any] = [
-            "model": "kimi-coding/k2p5",
+            "model": "kimi-k2.5",
             "messages": [
                 ["role": "system", "content": "你是一个专业的会议助手，擅长从会议记录中提取关键信息。"],
                 ["role": "user", "content": prompt]
