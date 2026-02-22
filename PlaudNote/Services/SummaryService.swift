@@ -101,7 +101,7 @@ class SummaryService: ObservableObject {
                 ["role": "system", "content": "你是一个专业的会议助手，擅长从会议记录中提取关键信息。"],
                 ["role": "user", "content": prompt]
             ],
-            "temperature": 0.3,
+            "temperature": 1,
             "max_tokens": 2000
         ]
         
