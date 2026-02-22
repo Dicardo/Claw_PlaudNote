@@ -21,8 +21,6 @@ class TranscriptionService: ObservableObject {
     init() {
         // 设置语言为中文（中国大陆），支持自动检测语言
         speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "zh-CN"))
-        // 允许自动检测语言
-        speechRecognizer?.supportsOnDeviceRecognition = true
     }
     
     // MARK: - 权限检查
@@ -132,18 +130,6 @@ class TranscriptionService: ObservableObject {
         recognitionTask = nil
         isLoading = false
         progressMessage = ""
-    }
-    
-    // MARK: - 检查离线支持
-    
-    @available(iOS 16.0, *)
-    func checkOnDeviceSupport() async -> Bool {
-        return await SFSpeechRecognizer.hasOnDeviceRecognition()
-    }
-    
-    func checkOnDeviceSupportLegacy() -> Bool {
-        // iOS 16 以下版本不支持离线识别
-        return false
     }
 }
 
