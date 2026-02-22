@@ -113,14 +113,26 @@ class SummaryService: ObservableObject {
         }
         
         URLSession.shared.dataTask(with: request) { data, response, error in
+            // 打印调试信息
             if let error = error {
+                print("[Kimi API Error] \(error.localizedDescription)")
                 completion(.failure(error))
                 return
             }
             
+            if let httpResponse = response as? HTTPURLResponse {
+                print("[Kimi API Status] \(httpResponse.statusCode)")
+            }
+            
             guard let data = data else {
+                print("[Kimi API Error] 无响应数据")
                 completion(.failure(NSError(domain: "SummaryService", code: -2, userInfo: [NSLocalizedDescriptionKey: "无响应数据"])))
                 return
+            }
+            
+            // 打印原始响应
+            if let responseString = String(data: data, encoding: .utf8) {
+                print("[Kimi API Response] \(responseString.prefix(500))")
             }
             
             do {
@@ -129,15 +141,19 @@ class SummaryService: ObservableObject {
                    let firstChoice = choices.first,
                    let message = firstChoice["message"] as? [String: Any],
                    let content = message["content"] as? String {
+                    print("[Kimi API Success] 生成成功")
                     completion(.success(content.trimmingCharacters(in: .whitespacesAndNewlines)))
                 } else if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
                           let error = json["error"] as? [String: Any],
                           let message = error["message"] as? String {
+                    print("[Kimi API Error] \(message)")
                     completion(.failure(NSError(domain: "SummaryService", code: -3, userInfo: [NSLocalizedDescriptionKey: message])))
                 } else {
+                    print("[Kimi API Error] 解析响应失败")
                     completion(.failure(NSError(domain: "SummaryService", code: -4, userInfo: [NSLocalizedDescriptionKey: "解析响应失败"])))
                 }
             } catch {
+                print("[Kimi API Error] JSON解析失败: \(error)")
                 completion(.failure(error))
             }
         }.resume()
