@@ -14,24 +14,10 @@ struct RecordingDetailView: View {
     @StateObject private var player = AudioPlayer()
     @StateObject private var transcriptionService = TranscriptionService()
     @StateObject private var summaryService = SummaryService()
-    @StateObject private var meetingSummaryService = MeetingSummaryService()
-    @StateObject private var taskExtractionService = TaskExtractionService()
     @State private var selectedTab = 0
     @State private var showRenameAlert = false
     @State private var newTitle = ""
     @State private var showDeleteConfirm = false
-    @State private var extractedTasks: [Task] = []
-    @State private var hasExtractedTasks = false
-    @State private var hasGeneratedSummary = false
-    
-    // 获取该录音的会议纪要和任务
-    var meetingSummary: MeetingSummary? {
-        taskStore.getMeetingSummary(for: recording.id)
-    }
-    
-    var recordingTasks: [Task] {
-        taskStore.getTasks(for: recording.id)
-    }
     
     var body: some View {
         ScrollView {
@@ -63,19 +49,14 @@ struct RecordingDetailView: View {
                             transcriptionService: transcriptionService
                         )
                     case 1:
-                        MeetingSummaryTabView(
+                        MeetingSummaryView(
                             recording: recording,
-                            meetingSummaryService: meetingSummaryService,
-                            taskStore: taskStore,
-                            hasGeneratedSummary: $hasGeneratedSummary
+                            summaryService: summaryService
                         )
                     case 2:
-                        TaskTabView(
+                        TodoView(
                             recording: recording,
-                            taskExtractionService: taskExtractionService,
-                            taskStore: taskStore,
-                            extractedTasks: $extractedTasks,
-                            hasExtractedTasks: $hasExtractedTasks
+                            summaryService: summaryService
                         )
                     default:
                         EmptyView()
@@ -132,9 +113,6 @@ struct RecordingDetailView: View {
         }
         .onAppear {
             player.prepare(url: recording.audioFileURL)
-            // 检查是否已有提取的任务和纪要
-            hasExtractedTasks = !recordingTasks.isEmpty
-            hasGeneratedSummary = meetingSummary != nil
         }
         .onDisappear {
             player.stop()
