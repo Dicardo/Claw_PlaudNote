@@ -55,7 +55,7 @@ struct TaskBoardView: View {
                         .padding(.horizontal)
                     
                     // 搜索栏
-                    SearchBar(text: $searchText)
+                    SearchBar(text: $searchText, placeholder: "搜索任务或负责人...")
                         .padding(.horizontal)
                     
                     // 过滤按钮
