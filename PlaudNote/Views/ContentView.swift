@@ -9,8 +9,10 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var store: RecordingStore
+    @EnvironmentObject var taskStore: TaskStore
     @State private var showRecordingSheet = false
     @State private var searchText = ""
+    @State private var selectedTab = 0
     
     var filteredRecordings: [Recording] {
         if searchText.isEmpty {
@@ -44,6 +46,20 @@ struct ContentView: View {
             }
             .navigationTitle("录音笔记")
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    NavigationLink(destination: TaskBoardView()) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "checklist")
+                            if taskStore.tasks.count > 0 {
+                                Text("\(taskStore.tasks.count)")
+                                    .font(.caption)
+                                    .fontWeight(.bold)
+                            }
+                        }
+                        .foregroundColor(.accentColor)
+                    }
+                }
+                
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { showRecordingSheet = true }) {
                         Image(systemName: "plus.circle.fill")
@@ -187,4 +203,5 @@ struct RecordingRowView: View {
 #Preview {
     ContentView()
         .environmentObject(RecordingStore())
+        .environmentObject(TaskStore())
 }

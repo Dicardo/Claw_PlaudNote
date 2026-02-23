@@ -15,6 +15,7 @@ struct PlaudNoteApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(RecordingStore())
+                .environmentObject(TaskStore())
         }
     }
 }

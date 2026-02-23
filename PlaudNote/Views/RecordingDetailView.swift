@@ -2,7 +2,7 @@
 //  RecordingDetailView.swift
 //  PlaudNote
 //
-//  录音详情界面 - 播放、转录、摘要
+//  录音详情界面 - 播放、转录、摘要、任务
 //
 
 import SwiftUI
@@ -10,13 +10,28 @@ import SwiftUI
 struct RecordingDetailView: View {
     let recording: Recording
     @EnvironmentObject var store: RecordingStore
+    @EnvironmentObject var taskStore: TaskStore
     @StateObject private var player = AudioPlayer()
     @StateObject private var transcriptionService = TranscriptionService()
     @StateObject private var summaryService = SummaryService()
+    @StateObject private var meetingSummaryService = MeetingSummaryService()
+    @StateObject private var taskExtractionService = TaskExtractionService()
     @State private var selectedTab = 0
     @State private var showRenameAlert = false
     @State private var newTitle = ""
     @State private var showDeleteConfirm = false
+    @State private var extractedTasks: [Task] = []
+    @State private var hasExtractedTasks = false
+    @State private var hasGeneratedSummary = false
+    
+    // 获取该录音的会议纪要和任务
+    var meetingSummary: MeetingSummary? {
+        taskStore.getMeetingSummary(for: recording.id)
+    }
+    
+    var recordingTasks: [Task] {
+        taskStore.getTasks(for: recording.id)
+    }
     
     var body: some View {
         ScrollView {
@@ -48,14 +63,19 @@ struct RecordingDetailView: View {
                             transcriptionService: transcriptionService
                         )
                     case 1:
-                        MeetingSummaryView(
+                        MeetingSummaryTabView(
                             recording: recording,
-                            summaryService: summaryService
+                            meetingSummaryService: meetingSummaryService,
+                            taskStore: taskStore,
+                            hasGeneratedSummary: $hasGeneratedSummary
                         )
                     case 2:
-                        TodoView(
+                        TaskTabView(
                             recording: recording,
-                            summaryService: summaryService
+                            taskExtractionService: taskExtractionService,
+                            taskStore: taskStore,
+                            extractedTasks: $extractedTasks,
+                            hasExtractedTasks: $hasExtractedTasks
                         )
                     default:
                         EmptyView()
@@ -101,14 +121,20 @@ struct RecordingDetailView: View {
         }
         .confirmationDialog("确认删除", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
             Button("删除录音", role: .destructive) {
+                // 删除录音时同时删除关联的任务和纪要
+                taskStore.deleteTasks(for: recording.id)
+                taskStore.deleteMeetingSummary(for: recording.id)
                 store.deleteRecording(recording)
             }
             Button("取消", role: .cancel) { }
         } message: {
-            Text("此操作无法撤销")
+            Text("此操作将同时删除关联的任务和会议纪要，无法撤销")
         }
         .onAppear {
             player.prepare(url: recording.audioFileURL)
+            // 检查是否已有提取的任务和纪要
+            hasExtractedTasks = !recordingTasks.isEmpty
+            hasGeneratedSummary = meetingSummary != nil
         }
         .onDisappear {
             player.stop()
@@ -445,5 +471,6 @@ struct TodoView: View {
     NavigationView {
         RecordingDetailView(recording: Recording.mock())
             .environmentObject(RecordingStore())
+            .environmentObject(TaskStore())
     }
 }
