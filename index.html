@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PlaudNote - AI 录音笔</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- 侧边栏 -->
+        <aside class="sidebar">
+            <div class="logo">
+                <i class="fas fa-microphone-lines"></i>
+                <span>PlaudNote</span>
+            </div>
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active" data-view="recorder">
+                    <i class="fas fa-microphone"></i>
+                    <span>录音</span>
+                </a>
+                <a href="#" class="nav-item" data-view="recordings">
+                    <i class="fas fa-list"></i>
+                    <span>录音列表</span>
+                </a>
+                <a href="#" class="nav-item" data-view="transcriptions">
+                    <i class="fas fa-file-lines"></i>
+                    <span>转录文本</span>
+                </a>
+                <a href="#" class="nav-item" data-view="tasks">
+                    <i class="fas fa-check-circle"></i>
+                    <span>任务面板</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <button id="clearDataBtn" class="btn-text">
+                    <i class="fas fa-trash"></i>
+                    <span>清空数据</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <!-- 录音视图 -->
+            <div class="view active" id="recorder-view">
+                <header class="page-header">
+                    <h1>录音</h1>
+                    <p class="subtitle">点击开始录制您的会议或笔记</p>
+                </header>
+                
+                <div class="recorder-container">
+                    <div class="recorder-visualizer">
+                        <canvas id="visualizer"></canvas>
+                        <div class="recording-indicator" id="recordingIndicator">
+                            <div class="pulse-ring"></div>
+                            <i class="fas fa-microphone"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="recording-timer" id="recordingTimer">00:00:00</div>
+                    
+                    <div class="recorder-controls">
+                        <button id="recordBtn" class="btn-record">
+                            <i class="fas fa-circle"></i>
+                            <span>开始录音</span>
+                        </button>
+                        <button id="pauseBtn" class="btn-pause" disabled>
+                            <i class="fas fa-pause"></i>
+                            <span>暂停</span>
+                        </button>
+                        <button id="stopBtn" class="btn-stop" disabled>
+                            <i class="fas fa-stop"></i>
+                            <span>停止</span>
+                        </button>
+                    </div>
+                    
+                    <div class="upload-section">
+                        <div class="upload-divider">
+                            <span>或</span>
+                        </div>
+                        <label class="upload-btn">
+                            <input type="file" id="audioUpload" accept="audio/*" hidden>
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <span>上传音频文件</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 录音列表视图 -->
+            <div class="view" id="recordings-view">
+                <header class="page-header">
+                    <h1>录音列表</h1>
+                    <p class="subtitle">管理和播放您的录音</p>
+                </header>
+                
+                <div class="recordings-list" id="recordingsList">
+                    <!-- 动态生成录音列表 -->
+                </div>
+            </div>
+
+            <!-- 转录文本视图 -->
+            <div class="view" id="transcriptions-view">
+                <header class="page-header">
+                    <h1>转录文本</h1>
+                    <p class="subtitle">查看 AI 转录的会议内容</p>
+                </header>
+                
+                <div class="transcriptions-list" id="transcriptionsList">
+                    <!-- 动态生成转录列表 -->
+                </div>
+            </div>
+
+            <!-- 任务面板视图 -->
+            <div class="view" id="tasks-view">
+                <header class="page-header">
+                    <h1>任务面板</h1>
+                    <p class="subtitle">管理从会议中提取的任务</p>
+                </header>
+                
+                <div class="tasks-container">
+                    <div class="tasks-section">
+                        <div class="section-header">
+                            <h2><i class="fas fa-users"></i> 总任务面板</h2>
+                            <span class="task-count" id="totalTaskCount">0</span>
+                        </div>
+                        <div class="tasks-list" id="totalTasksList">
+                            <!-- 动态生成总任务列表 -->
+                        </div>
+                    </div>
+                    
+                    <div class="tasks-section">
+                        <div class="section-header">
+                            <h2><i class="fas fa-user"></i> 个人任务面板</h2>
+                            <span class="task-count" id="personalTaskCount">0</span>
+                        </div>
+                        <div class="tasks-list" id="personalTasksList">
+                            <!-- 动态生成个人任务列表 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 音频播放器模态框 -->
+    <div class="modal" id="playerModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="playerTitle">播放录音</h3>
+                <button class="modal-close" id="closePlayerModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <audio id="audioPlayer" controls></audio>
+                <div class="player-info" id="playerInfo"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 转录详情模态框 -->
+    <div class="modal" id="transcriptionModal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3 id="transcriptionTitle">转录详情</h3>
+                <button class="modal-close" id="closeTranscriptionModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="transcription-tabs">
+                    <button class="tab-btn active" data-tab="transcript">转录文本</button>
+                    <button class="tab-btn" data-tab="summary">会议纪要</button>
+                    <button class="tab-btn" data-tab="tasks">提取任务</button>
+                </div>
+                <div class="tab-content active" id="transcriptTab">
+                    <div class="transcript-text" id="transcriptText"></div>
+                </div>
+                <div class="tab-content" id="summaryTab">
+                    <div class="summary-text" id="summaryText"></div>
+                </div>
+                <div class="tab-content" id="tasksTab">
+                    <div class="extracted-tasks" id="extractedTasks"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 会议纪要模态框 -->
+    <div class="modal" id="summaryModal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3>会议纪要</h3>
+                <button class="modal-close" id="closeSummaryModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="summary-container" id="summaryContainer">
+                    <!-- 动态生成会议纪要内容 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 确认对话框 -->
+    <div class="modal" id="confirmModal">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h3 id="confirmTitle">确认</h3>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage">确定要执行此操作吗？</p>
+                <div class="modal-actions">
+                    <button class="btn-secondary" id="cancelConfirm">取消</button>
+                    <button class="btn-danger" id="confirmAction">确定</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 提示消息 -->
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMessage">操作成功</span>
+    </div>
+
+    <script src="app.js"></script>
+    <script src="test.js"></script>
+</body>
+</html>
